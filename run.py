@@ -37,7 +37,7 @@ micrograph_side_len = int(sys.argv[3])
 
 micrographs= np.ones(
     (1, micrograph_side_len, micrograph_side_len),
-    dtype=np.complex64
+    dtype=np.float32
 )
 
 size_len = int(sys.argv[2])
