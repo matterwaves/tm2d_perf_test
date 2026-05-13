@@ -8,15 +8,26 @@ import tm2d_utils as tu
 
 vd.make_context(multi_device=True, multi_queue=True)
 
-pixel_sizes = np.arange(1.04, 1.09, 0.02)
-defoci = np.arange(12000, 12800, 25)
+atomic_coords = tu.load_coords_from_pdb("PDBs/6z6u_apoferritin.pdb")
+
+print("Atom count: {}".format(len(atomic_coords)))
+
+D_protein = tu.optics_functions.get_protein_radius(atomic_coords) * 2
+ang_step = tu.crowther_ang_step_from_resolution(3, D_protein)
+
+print(f"Protein diameter: {D_protein:.2f} A")
+print(f"Crowther angular step: {ang_step:.2f} degrees")
+
+defocus_count = int(sys.argv[5])
+
+pixel_sizes = np.array([1.0])
+defoci = np.arange(12000, 12000 + 25 * defocus_count, 25)
 rotations = tu.get_orientations_healpix(
-    angular_step_size=2,
-    psi_step_size=2,
+    angular_step_size=ang_step,
+    psi_step_size=ang_step,
     region=tu.OrientationRegion(symmetry=sys.argv[4])
 )
 
-print(f"Pixel size count: {len(pixel_sizes)}")
 print(f"Defocus count: {len(defoci)}")
 print(f"Rotation count: {len(rotations)}")
 
@@ -47,8 +58,8 @@ if template_type == "atomic":
         micrographs=micrographs,
         param_set=params,
         template_box_size=(size_len, size_len),
-        atomic_coords=tu.load_coords_from_npz("data/atoms.npz"),
-        #template_batch_size=1,
+        atomic_coords=atomic_coords,
+        template_batch_size=min(4, defocus_count),
         enable_progress_bar=True
     )
 elif template_type == "density":
@@ -61,7 +72,7 @@ elif template_type == "density":
         micrographs=micrographs,
         param_set=params,
         density=density,
-        #template_batch_size=1,
+        template_batch_size=min(4, defocus_count),
         enable_progress_bar=True
     )
 else:
